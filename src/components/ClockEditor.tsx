@@ -31,12 +31,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
 const ClockEditor: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [tabValue, setTabValue] = useState(0);
