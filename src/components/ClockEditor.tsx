@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import 'fabric';
 declare const fabric: any;
 
+type MarkType = 'numbers' | 'letters' | 'lines';
+
 import {
   AppBar,
   Box,
@@ -25,6 +27,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
+  ListSubheader,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
@@ -36,7 +39,7 @@ const ClockEditor: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [clockSize, setClockSize] = useState(30);
   const [usePixels, setUsePixels] = useState(false);
-  const [showNumbers, setShowNumbers] = useState(true);
+  const [markType, setMarkType] = useState<MarkType>('numbers');
   const [showCenterDot, setShowCenterDot] = useState(true);
   const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
   const [color, setColor] = useState('#000000');
@@ -47,6 +50,8 @@ const ClockEditor: React.FC = () => {
   const [innerPosition, setInnerPosition] = useState(0.8);
   const [selectedFont, setSelectedFont] = useState('Assistant');
   const [isEditable, setIsEditable] = useState(true);
+
+  const hebrewLetters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב'];
 
   const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -66,6 +71,64 @@ const ClockEditor: React.FC = () => {
     return brightness > 128 ? '#000000' : '#ffffff';
   };
 
+  const fonts = [
+    // קטגוריה: פונטים עבריים מודרניים
+    { name: 'Assistant', displayName: 'אסיסטנט', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Heebo', displayName: 'חיבו', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Rubik', displayName: 'רוביק', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Secular One', displayName: 'סקולר', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Suez One', displayName: 'סואץ', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Varela Round', displayName: 'ורלה', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Alef', displayName: 'אלף', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    
+    // קטגוריה: פונטים עבריים קלאסיים
+    { name: 'David Libre', displayName: 'דוד', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Frank Ruhl Libre', displayName: 'פרנק', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Miriam Libre', displayName: 'מרים', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Tinos', displayName: 'טינוס', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Noto Sans Hebrew', displayName: 'נוטו', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Open Sans Hebrew', displayName: 'אופן סנס', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    
+    // קטגוריה: פונטים עבריים מיוחדים
+    { name: 'Amatic SC', displayName: 'אמטיק', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Karantina', displayName: 'קרנטינה', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    { name: 'Bellefair', displayName: 'בלפייר', displayText: { numbers: '123', letters: 'אבג' }, category: 'hebrew', supportsHebrew: true },
+    
+    // קטגוריה: פונטים דקורטיביים למספרים
+    { name: 'Abril Fatface', displayName: 'אבריל', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Alfa Slab One', displayName: 'אלפא', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Bungee', displayName: 'בנג׳י', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Bungee Shade', displayName: 'בנג׳י צל', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Comfortaa', displayName: 'קומפורטה', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Righteous', displayName: 'רייצ׳ס', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Rubik Mono One', displayName: 'רוביק מונו', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    { name: 'Russo One', displayName: 'רוסו', displayText: { numbers: '123', letters: '123' }, category: 'decorative', supportsHebrew: false },
+    
+    // קטגוריה: פונטים אמנותיים למספרים
+    { name: 'Codystar', displayName: 'קודיסטאר', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+    { name: 'Creepster', displayName: 'קריפסטר', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+    { name: 'Fascinate', displayName: 'פאסינייט', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+    { name: 'Lobster', displayName: 'לובסטר', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+    { name: 'Monoton', displayName: 'מונוטון', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+    { name: 'Pacifico', displayName: 'פסיפיקו', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+    { name: 'Permanent Marker', displayName: 'מרקר', displayText: { numbers: '123', letters: '123' }, category: 'artistic', supportsHebrew: false },
+  ];
+
+  // מיון הפונטים לפי קטגוריות וסינון לפי תמיכה בעברית
+  const getFilteredFonts = () => {
+    const filteredFonts = markType === 'letters' ? fonts.filter(font => font.supportsHebrew) : fonts;
+    return filteredFonts.reduce((groups: { [key: string]: typeof fonts }, font) => {
+      const group = font.category;
+      if (!groups[group]) {
+        groups[group] = [];
+      }
+      groups[group].push(font);
+      return groups;
+    }, {});
+  };
+
+  const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
+
   useEffect(() => {
     const canvas = document.getElementById('clock-canvas') as HTMLCanvasElement;
     if (!canvas) return;
@@ -76,6 +139,8 @@ const ClockEditor: React.FC = () => {
       backgroundColor: getContrastColor(color),
       selection: isEditable
     });
+
+    setFabricCanvas(fabricCanvas);
 
     // Create clock circle
     const circle = new fabric.Circle({
@@ -91,15 +156,16 @@ const ClockEditor: React.FC = () => {
     });
     fabricCanvas.add(circle);
 
-    // Add numbers or lines
+    // Add numbers, lines or letters
     for (let i = 1; i <= 12; i++) {
       const angle = (i * 30 - 90) * (Math.PI / 180);
       const radius = 200 * innerPosition;
       const x = 250 + radius * Math.cos(angle);
       const y = 250 + radius * Math.sin(angle);
 
-      if (showNumbers) {
-        const number = new fabric.Text(i.toString(), {
+      if (markType === 'numbers' || markType === 'letters') {
+        const text = markType === 'numbers' ? i.toString() : hebrewLetters[i - 1];
+        const number = new fabric.Text(text, {
           left: x,
           top: y,
           fontSize: fontSize,
@@ -144,7 +210,7 @@ const ClockEditor: React.FC = () => {
     return () => {
       fabricCanvas.dispose();
     };
-  }, [color, showNumbers, fontSize, selectedFont, showCenterDot, lineWidth, lineLength, roundedEdges, innerPosition, isEditable]);
+  }, [color, markType, fontSize, selectedFont, showCenterDot, lineWidth, lineLength, roundedEdges, innerPosition, isEditable]);
 
   const handleExportClick = (event: React.MouseEvent<HTMLElement>) => {
     setExportAnchorEl(event.currentTarget);
@@ -155,45 +221,92 @@ const ClockEditor: React.FC = () => {
   };
 
   const handleExport = (format: string) => {
-    const canvas = document.getElementById('clock-canvas') as HTMLCanvasElement;
-    if (!canvas) return;
+    if (!fabricCanvas) return;
 
-    const size = usePixels ? clockSize : clockSize * 37.8;
-    const scale = size / 500;
+    // Convert size to pixels (1cm = 37.8 pixels)
+    const sizeInPixels = Math.round(usePixels ? clockSize : clockSize * 37.8);
+    console.log('Target size in pixels:', sizeInPixels);
 
-    // Create a temporary canvas for export
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = size;
-    tempCanvas.height = size;
+    // Save current canvas state
+    const originalState = {
+      width: fabricCanvas.width,
+      height: fabricCanvas.height,
+      backgroundColor: fabricCanvas.backgroundColor,
+      objects: fabricCanvas.getObjects().map(obj => ({
+        scaleX: obj.scaleX,
+        scaleY: obj.scaleY,
+        left: obj.left,
+        top: obj.top
+      }))
+    };
 
-    const ctx = tempCanvas.getContext('2d');
-    if (!ctx) return;
+    // Prepare canvas for export
+    fabricCanvas.setDimensions({
+      width: sizeInPixels,
+      height: sizeInPixels
+    });
 
-    // Draw the original canvas scaled to the new size
-    ctx.scale(scale, scale);
-    ctx.drawImage(canvas, 0, 0);
+    // Calculate positions relative to new size
+    fabricCanvas.getObjects().forEach((obj, index) => {
+      const originalScale = originalState.objects[index];
+      
+      // Calculate relative position (-0.5 to 0.5)
+      const relativeX = (originalScale.left - 250) / 500;
+      const relativeY = (originalScale.top - 250) / 500;
+      
+      // Calculate new scale based on original size (500x500)
+      const newScale = sizeInPixels / 500;
+      
+      // Apply new position and scale
+      obj.set({
+        left: sizeInPixels / 2 + relativeX * sizeInPixels,
+        top: sizeInPixels / 2 + relativeY * sizeInPixels,
+        scaleX: newScale,
+        scaleY: newScale
+      });
+    });
 
-    // Convert to the requested format
-    let extension = 'png', mimeType = 'image/png';
-    switch (format) {
-      case 'image/jpeg':
-        extension = 'jpg';
-        mimeType = 'image/jpeg';
-        break;
-      case 'image/svg+xml':
-        extension = 'svg';
-        mimeType = 'image/svg+xml';
-        break;
+    // Set background based on format and render
+    fabricCanvas.backgroundColor = format === 'image/jpeg' ? '#FFFFFF' : null;
+    fabricCanvas.renderAll();
+
+    // Export based on format
+    let dataUrl;
+    if (format === 'image/svg+xml') {
+      dataUrl = fabricCanvas.toSVG();
+    } else {
+      dataUrl = fabricCanvas.toDataURL({
+        format: format === 'image/png' ? 'png' : 'jpeg',
+        quality: 1,
+        enableRetinaScaling: false // Disable retina scaling to get exact pixel size
+      });
     }
 
-    // Get the data URL
-    const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
+    // Restore canvas state
+    fabricCanvas.setDimensions({
+      width: originalState.width,
+      height: originalState.height
+    });
 
-    // Download the image
+    // Restore all objects to original scale and position
+    fabricCanvas.getObjects().forEach((obj, index) => {
+      const originalScale = originalState.objects[index];
+      obj.set({
+        scaleX: originalScale.scaleX,
+        scaleY: originalScale.scaleY,
+        left: originalScale.left,
+        top: originalScale.top
+      });
+    });
+
+    fabricCanvas.backgroundColor = originalState.backgroundColor;
+    fabricCanvas.renderAll();
+
+    // Download the file
+    const extension = format === 'image/png' ? 'png' : format === 'image/jpeg' ? 'jpg' : 'svg';
     const link = document.createElement('a');
     link.download = `clock.${extension}`;
     link.href = dataUrl;
-    link.type = mimeType;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -231,7 +344,7 @@ const ClockEditor: React.FC = () => {
             open={Boolean(exportAnchorEl)}
             onClose={handleExportClose}
           >
-            <MenuItem onClick={() => handleExport('image/png')}>PNG</MenuItem>
+            <MenuItem onClick={() => handleExport('image/png')}>PNG (שקוף)</MenuItem>
             <MenuItem onClick={() => handleExport('image/jpeg')}>JPEG</MenuItem>
             <MenuItem onClick={() => handleExport('image/svg+xml')}>SVG</MenuItem>
           </Menu>
@@ -293,15 +406,18 @@ const ClockEditor: React.FC = () => {
                   </Stack>
                 </Box>
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={showNumbers}
-                      onChange={(e) => setShowNumbers(e.target.checked)}
-                    />
-                  }
-                  label="השתמש במספרים"
-                />
+                <FormControl fullWidth>
+                  <InputLabel>סוג סימון</InputLabel>
+                  <Select
+                    value={markType}
+                    onChange={(e) => setMarkType(e.target.value as MarkType)}
+                    label="סוג סימון"
+                  >
+                    <MenuItem value="numbers">מספרים</MenuItem>
+                    <MenuItem value="letters">אותיות עבריות</MenuItem>
+                    <MenuItem value="lines">קווים</MenuItem>
+                  </Select>
+                </FormControl>
 
                 <FormControlLabel
                   control={
@@ -320,37 +436,59 @@ const ClockEditor: React.FC = () => {
                   onChange={(e) => setColor(e.target.value)}
                   label="צבע"
                 />
-              </Stack>
-            </Box>
-          )}
 
-          {tabValue === 1 && (
-            <Box sx={{ p: 3 }}>
-              <Stack spacing={3}>
-                <FormControl fullWidth>
-                  <InputLabel>פונט</InputLabel>
-                  <Select
-                    value={selectedFont}
-                    onChange={(e) => setSelectedFont(e.target.value)}
-                    label="פונט"
-                  >
-                    <MenuItem value="Assistant">Assistant</MenuItem>
-                    <MenuItem value="Arial">Arial</MenuItem>
-                    <MenuItem value="Helvetica">Helvetica</MenuItem>
-                  </Select>
-                </FormControl>
+                {(markType === 'numbers' || markType === 'letters') && (
+                  <>
+                    <FormControl fullWidth>
+                      <InputLabel>פונט</InputLabel>
+                      <Select
+                        value={selectedFont}
+                        onChange={(e) => setSelectedFont(e.target.value)}
+                        label="פונט"
+                      >
+                        {Object.entries(getFilteredFonts()).map(([category, categoryFonts]) => [
+                          <ListSubheader key={category} sx={{ bgcolor: 'background.paper', fontWeight: 'bold' }}>
+                            {category === 'hebrew' ? 'פונטים עבריים' :
+                             category === 'decorative' ? 'פונטים דקורטיביים' :
+                             'פונטים אמנותיים'}
+                          </ListSubheader>,
+                          ...categoryFonts.map((font) => (
+                            <MenuItem 
+                              key={font.name} 
+                              value={font.name}
+                            >
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                <Typography>{font.displayName}</Typography>
+                                <Typography sx={{ 
+                                  fontFamily: `'${font.name}', sans-serif`,
+                                  fontSize: '24px',
+                                  minWidth: '60px',
+                                  textAlign: 'left'
+                                }}>
+                                  {markType === 'numbers' || font.category !== 'hebrew' ? 
+                                    font.displayText.numbers : 
+                                    font.displayText.letters}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))
+                        ]).flat()}
+                      </Select>
+                    </FormControl>
 
-                <Box>
-                  <Typography gutterBottom>גודל טקסט</Typography>
-                  <Slider
-                    value={fontSize}
-                    onChange={(_, value) => setFontSize(value as number)}
-                    min={12}
-                    max={48}
-                  />
-                </Box>
+                    <Box>
+                      <Typography gutterBottom>גודל טקסט</Typography>
+                      <Slider
+                        value={fontSize}
+                        onChange={(_, value) => setFontSize(value as number)}
+                        min={12}
+                        max={48}
+                      />
+                    </Box>
+                  </>
+                )}
 
-                {!showNumbers && (
+                {markType === 'lines' && (
                   <>
                     <Box>
                       <Typography gutterBottom>עובי קו</Typography>
@@ -388,10 +526,16 @@ const ClockEditor: React.FC = () => {
                     value={innerPosition * 100}
                     onChange={(_, value) => setInnerPosition((value as number) / 100)}
                     min={50}
-                    max={95}
+                    max={90}
                   />
                 </Box>
               </Stack>
+            </Box>
+          )}
+
+          {tabValue === 1 && (
+            <Box sx={{ p: 3 }}>
+              <Typography>הגדרות מתקדמות יתווספו בקרוב...</Typography>
             </Box>
           )}
         </Box>
