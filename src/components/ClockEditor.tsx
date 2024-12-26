@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fabric } from 'fabric';
+import 'fabric';
+declare const fabric: any;
 
 import {
   AppBar,
@@ -35,26 +36,6 @@ interface TabPanelProps {
   index: number;
   value: number;
 }
-
-const TabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-};
 
 const ClockEditor: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
