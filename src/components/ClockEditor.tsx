@@ -233,10 +233,10 @@ const ClockEditor: React.FC = () => {
       height: fabricCanvas.height,
       backgroundColor: fabricCanvas.backgroundColor,
       objects: fabricCanvas.getObjects().map(obj => ({
-        scaleX: obj.scaleX,
-        scaleY: obj.scaleY,
-        left: obj.left,
-        top: obj.top
+        scaleX: obj.scaleX || 1,
+        scaleY: obj.scaleY || 1,
+        left: obj.left || 0,
+        top: obj.top || 0
       }))
     };
 
@@ -251,8 +251,8 @@ const ClockEditor: React.FC = () => {
       const originalScale = originalState.objects[index];
       
       // Calculate relative position (-0.5 to 0.5)
-      const relativeX = (originalScale.left - 250) / 500;
-      const relativeY = (originalScale.top - 250) / 500;
+      const relativeX = ((originalScale.left || 0) - 250) / 500;
+      const relativeY = ((originalScale.top || 0) - 250) / 500;
       
       // Calculate new scale based on original size (500x500)
       const newScale = sizeInPixels / 500;
@@ -267,7 +267,7 @@ const ClockEditor: React.FC = () => {
     });
 
     // Set background based on format and render
-    fabricCanvas.backgroundColor = format === 'image/jpeg' ? '#FFFFFF' : null;
+    fabricCanvas.backgroundColor = format === 'image/jpeg' ? '#FFFFFF' : '';
     fabricCanvas.renderAll();
 
     // Export based on format
@@ -284,8 +284,8 @@ const ClockEditor: React.FC = () => {
 
     // Restore canvas state
     fabricCanvas.setDimensions({
-      width: originalState.width,
-      height: originalState.height
+      width: originalState.width || 500,
+      height: originalState.height || 500
     });
 
     // Restore all objects to original scale and position
@@ -299,7 +299,7 @@ const ClockEditor: React.FC = () => {
       });
     });
 
-    fabricCanvas.backgroundColor = originalState.backgroundColor;
+    fabricCanvas.backgroundColor = originalState.backgroundColor || '';
     fabricCanvas.renderAll();
 
     // Download the file
