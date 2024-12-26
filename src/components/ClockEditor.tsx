@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import 'fabric';
-declare const fabric: any;
+import { fabric } from 'fabric';
 
 import {
   AppBar,
@@ -292,130 +291,134 @@ const ClockEditor: React.FC = () => {
             <Tab label="מתקדם" />
           </Tabs>
 
-          <TabPanel value={tabValue} index={0}>
-            <Stack spacing={3}>
-              <Box>
-                <Typography gutterBottom>
-                  גודל השעון: {clockSize}{usePixels ? 'px' : 'ס"מ'}
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Slider
-                    value={clockSize}
-                    onChange={(_, value) => setClockSize(value as number)}
-                    min={usePixels ? 100 : 10}
-                    max={usePixels ? 1000 : 100}
-                    step={usePixels ? 10 : 1}
-                  />
-                  <ToggleButtonGroup
-                    value={usePixels ? 'px' : 'cm'}
-                    exclusive
-                    onChange={(_, value) => value && setUsePixels(value === 'px')}
-                    size="small"
+          {tabValue === 0 && (
+            <Box sx={{ p: 3 }}>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography gutterBottom>
+                    גודל השעון: {clockSize}{usePixels ? 'px' : 'ס"מ'}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Slider
+                      value={clockSize}
+                      onChange={(_, value) => setClockSize(value as number)}
+                      min={usePixels ? 100 : 10}
+                      max={usePixels ? 1000 : 100}
+                      step={usePixels ? 10 : 1}
+                    />
+                    <ToggleButtonGroup
+                      value={usePixels ? 'px' : 'cm'}
+                      exclusive
+                      onChange={(_, value) => value && setUsePixels(value === 'px')}
+                      size="small"
+                    >
+                      <ToggleButton value="cm">ס"מ</ToggleButton>
+                      <ToggleButton value="px">פיקסלים</ToggleButton>
+                    </ToggleButtonGroup>
+                  </Stack>
+                </Box>
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showNumbers}
+                      onChange={(e) => setShowNumbers(e.target.checked)}
+                    />
+                  }
+                  label="השתמש במספרים"
+                />
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showCenterDot}
+                      onChange={(e) => setShowCenterDot(e.target.checked)}
+                    />
+                  }
+                  label="הצג נקודה מרכזית"
+                />
+
+                <TextField
+                  fullWidth
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  label="צבע"
+                />
+              </Stack>
+            </Box>
+          )}
+
+          {tabValue === 1 && (
+            <Box sx={{ p: 3 }}>
+              <Stack spacing={3}>
+                <FormControl fullWidth>
+                  <InputLabel>פונט</InputLabel>
+                  <Select
+                    value={selectedFont}
+                    onChange={(e) => setSelectedFont(e.target.value)}
+                    label="פונט"
                   >
-                    <ToggleButton value="cm">ס"מ</ToggleButton>
-                    <ToggleButton value="px">פיקסלים</ToggleButton>
-                  </ToggleButtonGroup>
-                </Stack>
-              </Box>
+                    <MenuItem value="Assistant">Assistant</MenuItem>
+                    <MenuItem value="Arial">Arial</MenuItem>
+                    <MenuItem value="Helvetica">Helvetica</MenuItem>
+                  </Select>
+                </FormControl>
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showNumbers}
-                    onChange={(e) => setShowNumbers(e.target.checked)}
+                <Box>
+                  <Typography gutterBottom>גודל טקסט</Typography>
+                  <Slider
+                    value={fontSize}
+                    onChange={(_, value) => setFontSize(value as number)}
+                    min={12}
+                    max={48}
                   />
-                }
-                label="השתמש במספרים"
-              />
+                </Box>
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showCenterDot}
-                    onChange={(e) => setShowCenterDot(e.target.checked)}
-                  />
-                }
-                label="הצג נקודה מרכזית"
-              />
-
-              <TextField
-                fullWidth
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                label="צבע"
-              />
-            </Stack>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={1}>
-            <Stack spacing={3}>
-              <FormControl fullWidth>
-                <InputLabel>פונט</InputLabel>
-                <Select
-                  value={selectedFont}
-                  onChange={(e) => setSelectedFont(e.target.value)}
-                  label="פונט"
-                >
-                  <MenuItem value="Assistant">Assistant</MenuItem>
-                  <MenuItem value="Arial">Arial</MenuItem>
-                  <MenuItem value="Helvetica">Helvetica</MenuItem>
-                </Select>
-              </FormControl>
-
-              <Box>
-                <Typography gutterBottom>גודל טקסט</Typography>
-                <Slider
-                  value={fontSize}
-                  onChange={(_, value) => setFontSize(value as number)}
-                  min={12}
-                  max={48}
-                />
-              </Box>
-
-              {!showNumbers && (
-                <>
-                  <Box>
-                    <Typography gutterBottom>עובי קו</Typography>
-                    <Slider
-                      value={lineWidth}
-                      onChange={(_, value) => setLineWidth(value as number)}
-                      min={1}
-                      max={10}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography gutterBottom>אורך קו</Typography>
-                    <Slider
-                      value={lineLength}
-                      onChange={(_, value) => setLineLength(value as number)}
-                      min={10}
-                      max={50}
-                    />
-                  </Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={roundedEdges}
-                        onChange={(e) => setRoundedEdges(e.target.checked)}
+                {!showNumbers && (
+                  <>
+                    <Box>
+                      <Typography gutterBottom>עובי קו</Typography>
+                      <Slider
+                        value={lineWidth}
+                        onChange={(_, value) => setLineWidth(value as number)}
+                        min={1}
+                        max={10}
                       />
-                    }
-                    label="קצוות מעוגלים"
-                  />
-                </>
-              )}
+                    </Box>
+                    <Box>
+                      <Typography gutterBottom>אורך קו</Typography>
+                      <Slider
+                        value={lineLength}
+                        onChange={(_, value) => setLineLength(value as number)}
+                        min={10}
+                        max={50}
+                      />
+                    </Box>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={roundedEdges}
+                          onChange={(e) => setRoundedEdges(e.target.checked)}
+                        />
+                      }
+                      label="קצוות מעוגלים"
+                    />
+                  </>
+                )}
 
-              <Box>
-                <Typography gutterBottom>מרחק מהמרכז</Typography>
-                <Slider
-                  value={innerPosition * 100}
-                  onChange={(_, value) => setInnerPosition((value as number) / 100)}
-                  min={50}
-                  max={95}
-                />
-              </Box>
-            </Stack>
-          </TabPanel>
+                <Box>
+                  <Typography gutterBottom>מרחק מהמרכז</Typography>
+                  <Slider
+                    value={innerPosition * 100}
+                    onChange={(_, value) => setInnerPosition((value as number) / 100)}
+                    min={50}
+                    max={95}
+                  />
+                </Box>
+              </Stack>
+            </Box>
+          )}
         </Box>
       </Drawer>
 
