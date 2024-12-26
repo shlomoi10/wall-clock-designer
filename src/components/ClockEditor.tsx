@@ -50,6 +50,7 @@ const ClockEditor: React.FC = () => {
   const [innerPosition, setInnerPosition] = useState(0.8);
   const [selectedFont, setSelectedFont] = useState('Assistant');
   const [isEditable, setIsEditable] = useState(true);
+  const [whiteOutsideCircle, setWhiteOutsideCircle] = useState(false);
 
   const hebrewLetters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב'];
 
@@ -159,7 +160,7 @@ const ClockEditor: React.FC = () => {
     // Add numbers, lines or letters
     for (let i = 1; i <= 12; i++) {
       const angle = (i * 30 - 90) * (Math.PI / 180);
-      const radius = 200 * innerPosition;
+      const radius = 200 * innerPosition * 1.3; // הגדלנו את הרדיוס ב-30%
       const x = 250 + radius * Math.cos(angle);
       const y = 250 + radius * Math.sin(angle);
 
@@ -227,80 +228,78 @@ const ClockEditor: React.FC = () => {
     const sizeInPixels = Math.round(usePixels ? clockSize : clockSize * 37.8);
     console.log('Target size in pixels:', sizeInPixels);
 
-    // Save current canvas state
-    const originalState = {
-      width: fabricCanvas.width,
-      height: fabricCanvas.height,
-      backgroundColor: fabricCanvas.backgroundColor,
-      objects: fabricCanvas.getObjects().map(obj => ({
-        scaleX: obj.scaleX || 1,
-        scaleY: obj.scaleY || 1,
-        left: obj.left || 0,
-        top: obj.top || 0
-      }))
-    };
-
-    // Prepare canvas for export
-    fabricCanvas.setDimensions({
+    // Create a temporary canvas for export
+    const tempCanvas = new fabric.Canvas(null, {
       width: sizeInPixels,
-      height: sizeInPixels
+      height: sizeInPixels,
+      backgroundColor: format === 'image/jpeg' ? '#FFFFFF' : ''
     });
 
-    // Calculate positions relative to new size
-    fabricCanvas.getObjects().forEach((obj, index) => {
-      const originalScale = originalState.objects[index];
+    // Copy all objects from the original canvas
+    fabricCanvas.getObjects().forEach((obj) => {
+      const clonedObj = fabric.util.object.clone(obj);
       
       // Calculate relative position (-0.5 to 0.5)
-      const relativeX = ((originalScale.left || 0) - 250) / 500;
-      const relativeY = ((originalScale.top || 0) - 250) / 500;
+      const relativeX = (obj.left! - 250) / 500;
+      const relativeY = (obj.top! - 250) / 500;
       
       // Calculate new scale based on original size (500x500)
       const newScale = sizeInPixels / 500;
       
       // Apply new position and scale
-      obj.set({
+      clonedObj.set({
         left: sizeInPixels / 2 + relativeX * sizeInPixels,
         top: sizeInPixels / 2 + relativeY * sizeInPixels,
         scaleX: newScale,
         scaleY: newScale
       });
+      
+      tempCanvas.add(clonedObj);
     });
 
-    // Set background based on format and render
-    fabricCanvas.backgroundColor = format === 'image/jpeg' ? '#FFFFFF' : '';
-    fabricCanvas.renderAll();
+    // If PNG and whiteOutsideCircle is enabled, create a mask
+    if (format === 'image/png' && whiteOutsideCircle) {
+      // Create a path that represents a white rectangle with a transparent circle
+      const radius = sizeInPixels / 2;
+      const center = sizeInPixels / 2;
+      
+      const path = new fabric.Path(
+        `M 0 0
+         L ${sizeInPixels} 0
+         L ${sizeInPixels} ${sizeInPixels}
+         L 0 ${sizeInPixels}
+         Z
+         M ${center} ${center}
+         m -${radius}, 0
+         a ${radius},${radius} 0 1,0 ${radius * 2},0
+         a ${radius},${radius} 0 1,0 -${radius * 2},0`,
+        {
+          fill: '#FFFFFF',
+          selectable: false,
+          evented: false
+        }
+      );
+      
+      // Add the mask at the bottom
+      tempCanvas.insertAt(path, 0);
+    }
+
+    tempCanvas.renderAll();
 
     // Export based on format
     let dataUrl;
     if (format === 'image/svg+xml') {
-      dataUrl = fabricCanvas.toSVG();
+      dataUrl = tempCanvas.toSVG();
     } else {
-      dataUrl = fabricCanvas.toDataURL({
+      dataUrl = tempCanvas.toDataURL({
         format: format === 'image/png' ? 'png' : 'jpeg',
         quality: 1,
-        enableRetinaScaling: false // Disable retina scaling to get exact pixel size
+        enableRetinaScaling: false
       });
     }
 
-    // Restore canvas state
-    fabricCanvas.setDimensions({
-      width: originalState.width || 500,
-      height: originalState.height || 500
-    });
-
-    // Restore all objects to original scale and position
-    fabricCanvas.getObjects().forEach((obj, index) => {
-      const originalScale = originalState.objects[index];
-      obj.set({
-        scaleX: originalScale.scaleX,
-        scaleY: originalScale.scaleY,
-        left: originalScale.left,
-        top: originalScale.top
-      });
-    });
-
-    fabricCanvas.backgroundColor = originalState.backgroundColor || '';
-    fabricCanvas.renderAll();
+    // Clean up
+    tempCanvas.dispose();
 
     // Download the file
     const extension = format === 'image/png' ? 'png' : format === 'image/jpeg' ? 'jpg' : 'svg';
@@ -523,10 +522,15 @@ const ClockEditor: React.FC = () => {
                 <Box>
                   <Typography gutterBottom>מרחק מהמרכז</Typography>
                   <Slider
-                    value={innerPosition * 100}
-                    onChange={(_, value) => setInnerPosition((value as number) / 100)}
-                    min={50}
-                    max={90}
+                    value={innerPosition}
+                    onChange={(_, value) => setInnerPosition(value as number)}
+                    min={0.5}
+                    max={0.99}
+                    step={0.01}
+                    marks={[
+                      { value: 0.5, label: '50%' },
+                      { value: 0.99, label: '99%' }
+                    ]}
                   />
                 </Box>
               </Stack>
@@ -535,7 +539,19 @@ const ClockEditor: React.FC = () => {
 
           {tabValue === 1 && (
             <Box sx={{ p: 3 }}>
-              <Typography>הגדרות מתקדמות יתווספו בקרוב...</Typography>
+              <Typography variant="h6" gutterBottom>
+                הגדרות מתקדם
+              </Typography>
+              
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={whiteOutsideCircle}
+                    onChange={(e) => setWhiteOutsideCircle(e.target.checked)}
+                  />
+                }
+                label="רקע לבן מחוץ לשעון (PNG)"
+              />
             </Box>
           )}
         </Box>
