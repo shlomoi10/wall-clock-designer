@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import 'fabric';
 declare const fabric: any;
 
 import {
   AppBar,
   Box,
-  Container,
   Drawer,
   IconButton,
   Paper,
@@ -26,7 +25,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  Divider
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
@@ -59,37 +57,7 @@ const TabPanel = (props: TabPanelProps) => {
   );
 };
 
-const EXPORT_FORMATS = [
-  { label: 'PNG (שקוף)', value: 'image/png' },
-  { label: 'JPEG', value: 'image/jpeg' },
-  { label: 'SVG', value: 'image/svg+xml' }
-];
-
-const FONTS = [
-  'Assistant',
-  'Arial',
-  'Helvetica',
-  'Times New Roman',
-  'Courier New'
-];
-
-interface ClockSettings {
-  size: number;
-  sizeUnit: 'cm' | 'px';
-  fontSize: number;
-  lineWidth: number;
-  lineLength: number;
-  fontFamily: string;
-  color: string;
-  useNumbers: boolean;
-  innerPosition: number;
-  roundedEdges: boolean;
-  showCenterDot: boolean;
-  backgroundImage: string | null;
-}
-
 const ClockEditor: React.FC = () => {
-  const canvasRef = useRef<fabric.Canvas | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [clockSize, setClockSize] = useState(30);
@@ -106,10 +74,6 @@ const ClockEditor: React.FC = () => {
   const [selectedFont, setSelectedFont] = useState('Assistant');
   const [isEditable, setIsEditable] = useState(true);
 
-  // קבוע לגודל התצוגה המקדימה
-  const PREVIEW_SIZE = 500;
-
-  // פונקציה להמרת צבע hex לערכי RGB
   const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
@@ -119,15 +83,12 @@ const ClockEditor: React.FC = () => {
     } : null;
   };
 
-  // פונקציה לחישוב צבע ניגודי
   const getContrastColor = (hexColor: string): string => {
     const rgb = hexToRgb(hexColor);
     if (!rgb) return '#ffffff';
     
-    // חישוב בהירות הצבע
     const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
     
-    // החזרת צבע ניגודי בהתאם לבהירות
     return brightness > 128 ? '#000000' : '#ffffff';
   };
 
@@ -177,8 +138,6 @@ const ClockEditor: React.FC = () => {
         fabricCanvas.add(number);
       } else {
         const lineStart = roundedEdges ? 'round' : 'butt';
-        const lineEnd = roundedEdges ? 'round' : 'butt';
-        
         const line = new fabric.Line([
           250 + (radius - lineLength / 2) * Math.cos(angle),
           250 + (radius - lineLength / 2) * Math.sin(angle),
@@ -188,7 +147,6 @@ const ClockEditor: React.FC = () => {
           stroke: color,
           strokeWidth: lineWidth,
           strokeLineCap: lineStart as any,
-          strokeLineEnd: lineEnd as any,
           selectable: isEditable
         });
         fabricCanvas.add(line);
@@ -209,9 +167,6 @@ const ClockEditor: React.FC = () => {
       fabricCanvas.add(dot);
     }
 
-    // Store canvas instance
-    canvas.fabric = fabricCanvas;
-
     return () => {
       fabricCanvas.dispose();
     };
@@ -227,41 +182,26 @@ const ClockEditor: React.FC = () => {
 
   const handleExport = (format: string) => {
     const canvas = document.getElementById('clock-canvas') as HTMLCanvasElement;
-    if (!canvas.fabric) return;
+    if (!canvas) return;
 
-    const fabricCanvas = canvas.fabric as fabric.Canvas;
-    
-    // Set export size
     const size = usePixels ? clockSize : clockSize * 37.8;
-    
+    const scale = size / 500;
+
     // Create a temporary canvas for export
     const tempCanvas = document.createElement('canvas');
-    const tempFabric = new fabric.Canvas(tempCanvas, {
-      width: size,
-      height: size,
-      backgroundColor: format === 'image/jpeg' ? '#FFFFFF' : 'transparent'
-    });
+    tempCanvas.width = size;
+    tempCanvas.height = size;
 
-    // Clone and scale objects
-    const scale = size / 500;
-    fabricCanvas.getObjects().forEach(obj => {
-      const clone = fabric.util.object.clone(obj);
-      clone.scaleX = (clone.scaleX || 1) * scale;
-      clone.scaleY = (clone.scaleY || 1) * scale;
-      clone.left = (clone.left || 0) * scale;
-      clone.top = (clone.top || 0) * scale;
-      tempFabric.add(clone);
-    });
+    const ctx = tempCanvas.getContext('2d');
+    if (!ctx) return;
 
-    tempFabric.renderAll();
+    // Draw the original canvas scaled to the new size
+    ctx.scale(scale, scale);
+    ctx.drawImage(canvas, 0, 0);
 
-    // Generate data URL and download
-    let extension, mimeType;
+    // Convert to the requested format
+    let extension = 'png', mimeType = 'image/png';
     switch (format) {
-      case 'image/png':
-        extension = 'png';
-        mimeType = 'image/png';
-        break;
       case 'image/jpeg':
         extension = 'jpg';
         mimeType = 'image/jpeg';
@@ -270,22 +210,12 @@ const ClockEditor: React.FC = () => {
         extension = 'svg';
         mimeType = 'image/svg+xml';
         break;
-      default:
-        return;
     }
 
-    let dataUrl;
-    if (format === 'image/svg+xml') {
-      const svg = tempFabric.toSVG();
-      dataUrl = `data:${mimeType};charset=utf-8,${encodeURIComponent(svg)}`;
-    } else {
-      dataUrl = tempFabric.toDataURL({
-        format: format === 'image/png' ? 'png' : 'jpeg',
-        quality: 1
-      });
-    }
+    // Get the data URL
+    const dataUrl = tempCanvas.toDataURL(mimeType, 1.0);
 
-    // Download
+    // Download the image
     const link = document.createElement('a');
     link.download = `clock.${extension}`;
     link.href = dataUrl;
@@ -294,16 +224,7 @@ const ClockEditor: React.FC = () => {
     link.click();
     document.body.removeChild(link);
 
-    // Cleanup
-    tempFabric.dispose();
     handleExportClose();
-  };
-
-  const a11yProps = (index: number) => {
-    return {
-      id: `tab-${index}`,
-      'aria-controls': `tabpanel-${index}`,
-    };
   };
 
   return (
@@ -336,14 +257,9 @@ const ClockEditor: React.FC = () => {
             open={Boolean(exportAnchorEl)}
             onClose={handleExportClose}
           >
-            {EXPORT_FORMATS.map((format) => (
-              <MenuItem
-                key={format.value}
-                onClick={() => handleExport(format.value)}
-              >
-                {format.label}
-              </MenuItem>
-            ))}
+            <MenuItem onClick={() => handleExport('image/png')}>PNG</MenuItem>
+            <MenuItem onClick={() => handleExport('image/jpeg')}>JPEG</MenuItem>
+            <MenuItem onClick={() => handleExport('image/svg+xml')}>SVG</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
@@ -372,8 +288,8 @@ const ClockEditor: React.FC = () => {
             onChange={(_, newValue) => setTabValue(newValue)}
             aria-label="הגדרות שעון"
           >
-            <Tab label="בסיסי" {...a11yProps(0)} />
-            <Tab label="מתקדם" {...a11yProps(1)} />
+            <Tab label="בסיסי" />
+            <Tab label="מתקדם" />
           </Tabs>
 
           <TabPanel value={tabValue} index={0}>
@@ -441,9 +357,9 @@ const ClockEditor: React.FC = () => {
                   onChange={(e) => setSelectedFont(e.target.value)}
                   label="פונט"
                 >
-                  {FONTS.map(font => (
-                    <MenuItem key={font} value={font}>{font}</MenuItem>
-                  ))}
+                  <MenuItem value="Assistant">Assistant</MenuItem>
+                  <MenuItem value="Arial">Arial</MenuItem>
+                  <MenuItem value="Helvetica">Helvetica</MenuItem>
                 </Select>
               </FormControl>
 
