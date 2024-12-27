@@ -1,34 +1,85 @@
-# Wall Clock Designer
+# מעצב שעוני קיר
 
-An interactive web application for designing custom wall clocks. Create your perfect clock with customizable size, colors, numbers, and hands.
+אפליקציה לעיצוב שעוני קיר מותאמים אישית. האפליקציה מאפשרת לעצב שעון קיר עם מגוון אפשרויות התאמה אישית ולייצא אותו בפורמטים שונים.
 
-## Features
+## תכונות עיקריות
 
-- Choose clock size in pixels or centimeters
-- Customize clock face color
-- Select number style and font
-- Adjust hands design
-- Export your design as PNG, JPEG, or SVG
+### סימוני שעות
+- **סוגי סימון**:
+  - מספרים (1-12)
+  - אותיות עבריות (א-יב)
+  - קווים
+  - נקודות
+  - **התאמה אישית**: אפשרות לבחור סימון שונה לכל שעה (כולל אפשרות להסתיר סימונים)
 
-## Live Demo
+### אפשרויות עיצוב
 
-Visit [Wall Clock Designer](https://YOUR_GITHUB_USERNAME.github.io/wall-clock-designer) to try it out!
+#### טקסט (מספרים ואותיות)
+- בחירת גופן ממגוון גופנים:
+  - גופנים עבריים
+  - גופנים דקורטיביים
+  - גופנים אמנותיים
+- גודל טקסט (12-48)
 
-## Development
+#### קווים
+- אורך קווים (10-50)
+- עובי קו (1-10)
+- קצוות מעוגלים
 
-This project is built with:
+#### נקודות
+- גודל נקודה (2-10)
+
+#### כללי
+- בחירת צבע
+- מרחק מהמרכז (50%-99%)
+- נקודה במרכז השעון
+- אפשרות לעריכה ידנית של מיקום האלמנטים
+
+### ייצוא
+- **פורמטים נתמכים**:
+  - PNG (עם אפשרות לרקע לבן מחוץ לשעון)
+  - JPEG (עם רקע לבן)
+  - SVG
+- בחירת גודל בסנטימטרים או פיקסלים
+
+## שימוש
+
+1. בחר את סוג הסימון הרצוי (מספרים, אותיות, קווים, נקודות או התאמה אישית)
+2. התאם את האפשרויות הרלוונטיות (גופן, גודל, צבע וכו')
+3. בהתאמה אישית, בחר סימון ספציפי לכל שעה
+4. כוון את מיקום הסימונים באמצעות מחוון המרחק מהמרכז
+5. לחץ על כפתור הייצוא ובחר את הפורמט הרצוי
+6. הגדר את גודל השעון בסנטימטרים
+7. הורד את הקובץ המוכן
+
+## דוגמה חיה
+
+האפליקציה זמינה ב: [https://shlomoi10.github.io/wall-clock-designer/](https://shlomoi10.github.io/wall-clock-designer/)
+
+## טכנולוגיות
+
 - React
 - TypeScript
-- Fabric.js
 - Material-UI
+- Fabric.js
 
-To run locally:
+## פיתוח
 
+1. התקן את התלויות:
 ```bash
 npm install
+```
+
+2. הרץ את סביבת הפיתוח:
+```bash
 npm run dev
 ```
 
-## License
+3. בנה את האפליקציה:
+```bash
+npm run build
+```
+
+## רישיון
 
 MIT License

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import 'fabric';
 declare const fabric: any;
 
-type MarkType = 'numbers' | 'letters' | 'lines';
+type MarkType = 'numbers' | 'letters' | 'lines' | 'dots' | 'custom';
 
 import {
   AppBar,
@@ -51,6 +51,10 @@ const ClockEditor: React.FC = () => {
   const [selectedFont, setSelectedFont] = useState('Assistant');
   const [isEditable, setIsEditable] = useState(true);
   const [whiteOutsideCircle, setWhiteOutsideCircle] = useState(false);
+  const [customMarks, setCustomMarks] = useState<Array<'none' | 'number' | 'letter' | 'line' | 'dot'>>(
+    Array(12).fill('number')
+  );
+  const [dotSize, setDotSize] = useState(3);
 
   const hebrewLetters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב'];
 
@@ -160,37 +164,102 @@ const ClockEditor: React.FC = () => {
     // Add numbers, lines or letters
     for (let i = 1; i <= 12; i++) {
       const angle = (i * 30 - 90) * (Math.PI / 180);
-      const radius = 200 * innerPosition * 1.3; // הגדלנו את הרדיוס ב-30%
+      const radius = 200 * innerPosition * 1.3;
       const x = 250 + radius * Math.cos(angle);
       const y = 250 + radius * Math.sin(angle);
 
-      if (markType === 'numbers' || markType === 'letters') {
-        const text = markType === 'numbers' ? i.toString() : hebrewLetters[i - 1];
-        const number = new fabric.Text(text, {
+      let element: fabric.Object | null = null;
+
+      if (markType === 'custom') {
+        const markType = customMarks[i - 1];
+        switch (markType) {
+          case 'number':
+            element = new fabric.Text(i.toString(), {
+              fontSize,
+              fontFamily: selectedFont,
+              fill: color,
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+          case 'letter':
+            element = new fabric.Text(hebrewLetters[i - 1], {
+              fontSize,
+              fontFamily: selectedFont,
+              fill: color,
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+          case 'line':
+            const lineEndX = x + lineLength * Math.cos(angle);
+            const lineEndY = y + lineLength * Math.sin(angle);
+            element = new fabric.Line([x, y, lineEndX, lineEndY], {
+              stroke: color,
+              strokeWidth: lineWidth,
+              strokeLineCap: roundedEdges ? 'round' : 'butt',
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+          case 'dot':
+            element = new fabric.Circle({
+              radius: dotSize,
+              fill: color,
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+        }
+      } else {
+        switch (markType) {
+          case 'numbers':
+            element = new fabric.Text(i.toString(), {
+              fontSize,
+              fontFamily: selectedFont,
+              fill: color,
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+          case 'letters':
+            element = new fabric.Text(hebrewLetters[i - 1], {
+              fontSize,
+              fontFamily: selectedFont,
+              fill: color,
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+          case 'lines':
+            const lineEndX = x + lineLength * Math.cos(angle);
+            const lineEndY = y + lineLength * Math.sin(angle);
+            element = new fabric.Line([x, y, lineEndX, lineEndY], {
+              stroke: color,
+              strokeWidth: lineWidth,
+              strokeLineCap: roundedEdges ? 'round' : 'butt',
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+          case 'dots':
+            element = new fabric.Circle({
+              radius: dotSize,
+              fill: color,
+              originX: 'center',
+              originY: 'center'
+            });
+            break;
+        }
+      }
+
+      if (element) {
+        element.set({
           left: x,
           top: y,
-          fontSize: fontSize,
-          fontFamily: selectedFont,
-          fill: color,
-          originX: 'center',
-          originY: 'center',
           selectable: isEditable
         });
-        fabricCanvas.add(number);
-      } else {
-        const lineStart = roundedEdges ? 'round' : 'butt';
-        const line = new fabric.Line([
-          250 + (radius - lineLength / 2) * Math.cos(angle),
-          250 + (radius - lineLength / 2) * Math.sin(angle),
-          250 + (radius + lineLength / 2) * Math.cos(angle),
-          250 + (radius + lineLength / 2) * Math.sin(angle)
-        ], {
-          stroke: color,
-          strokeWidth: lineWidth,
-          strokeLineCap: lineStart as any,
-          selectable: isEditable
-        });
-        fabricCanvas.add(line);
+        fabricCanvas.add(element);
       }
     }
 
@@ -211,7 +280,7 @@ const ClockEditor: React.FC = () => {
     return () => {
       fabricCanvas.dispose();
     };
-  }, [color, markType, fontSize, selectedFont, showCenterDot, lineWidth, lineLength, roundedEdges, innerPosition, isEditable]);
+  }, [color, markType, fontSize, selectedFont, showCenterDot, lineWidth, lineLength, roundedEdges, innerPosition, isEditable, customMarks, dotSize]);
 
   const handleExportClick = (event: React.MouseEvent<HTMLElement>) => {
     setExportAnchorEl(event.currentTarget);
@@ -409,12 +478,14 @@ const ClockEditor: React.FC = () => {
                   <InputLabel>סוג סימון</InputLabel>
                   <Select
                     value={markType}
-                    onChange={(e) => setMarkType(e.target.value as MarkType)}
+                    onChange={(e) => setMarkType(e.target.value as typeof markType)}
                     label="סוג סימון"
                   >
                     <MenuItem value="numbers">מספרים</MenuItem>
-                    <MenuItem value="letters">אותיות עבריות</MenuItem>
+                    <MenuItem value="letters">אותיות</MenuItem>
                     <MenuItem value="lines">קווים</MenuItem>
+                    <MenuItem value="dots">נקודות</MenuItem>
+                    <MenuItem value="custom">התאמה אישית</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -436,14 +507,15 @@ const ClockEditor: React.FC = () => {
                   label="צבע"
                 />
 
-                {(markType === 'numbers' || markType === 'letters') && (
+                {(markType === 'numbers' || markType === 'letters' || 
+                  (markType === 'custom' && customMarks.some(m => m === 'number' || m === 'letter'))) && (
                   <>
                     <FormControl fullWidth>
-                      <InputLabel>פונט</InputLabel>
+                      <InputLabel>גופן</InputLabel>
                       <Select
                         value={selectedFont}
                         onChange={(e) => setSelectedFont(e.target.value)}
-                        label="פונט"
+                        label="גופן"
                       >
                         {Object.entries(getFilteredFonts()).map(([category, categoryFonts]) => [
                           <ListSubheader key={category} sx={{ bgcolor: 'background.paper', fontWeight: 'bold' }}>
@@ -487,8 +559,18 @@ const ClockEditor: React.FC = () => {
                   </>
                 )}
 
-                {markType === 'lines' && (
+                {(markType === 'lines' || 
+                  (markType === 'custom' && customMarks.some(m => m === 'line'))) && (
                   <>
+                    <Box>
+                      <Typography gutterBottom>אורך קווים</Typography>
+                      <Slider
+                        value={lineLength}
+                        onChange={(_, value) => setLineLength(value as number)}
+                        min={10}
+                        max={50}
+                      />
+                    </Box>
                     <Box>
                       <Typography gutterBottom>עובי קו</Typography>
                       <Slider
@@ -496,15 +578,6 @@ const ClockEditor: React.FC = () => {
                         onChange={(_, value) => setLineWidth(value as number)}
                         min={1}
                         max={10}
-                      />
-                    </Box>
-                    <Box>
-                      <Typography gutterBottom>אורך קו</Typography>
-                      <Slider
-                        value={lineLength}
-                        onChange={(_, value) => setLineLength(value as number)}
-                        min={10}
-                        max={50}
                       />
                     </Box>
                     <FormControlLabel
@@ -519,20 +592,49 @@ const ClockEditor: React.FC = () => {
                   </>
                 )}
 
-                <Box>
-                  <Typography gutterBottom>מרחק מהמרכז</Typography>
-                  <Slider
-                    value={innerPosition}
-                    onChange={(_, value) => setInnerPosition(value as number)}
-                    min={0.5}
-                    max={0.99}
-                    step={0.01}
-                    marks={[
-                      { value: 0.5, label: '50%' },
-                      { value: 0.99, label: '99%' }
-                    ]}
-                  />
-                </Box>
+                {(markType === 'dots' || 
+                  (markType === 'custom' && customMarks.some(m => m === 'dot'))) && (
+                  <Box>
+                    <Typography gutterBottom>גודל נקודה</Typography>
+                    <Slider
+                      value={dotSize}
+                      onChange={(_, value) => setDotSize(value as number)}
+                      min={2}
+                      max={10}
+                    />
+                  </Box>
+                )}
+              </Stack>
+            </Box>
+          )}
+
+          {tabValue === 0 && markType === 'custom' && (
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                התאמה אישית
+              </Typography>
+              <Stack spacing={2}>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography sx={{ minWidth: 30 }}>{i + 1}</Typography>
+                    <FormControl fullWidth size="small">
+                      <Select
+                        value={customMarks[i]}
+                        onChange={(e) => {
+                          const newMarks = [...customMarks];
+                          newMarks[i] = e.target.value as typeof customMarks[number];
+                          setCustomMarks(newMarks);
+                        }}
+                      >
+                        <MenuItem value="none">ללא</MenuItem>
+                        <MenuItem value="number">מספר</MenuItem>
+                        <MenuItem value="letter">אות</MenuItem>
+                        <MenuItem value="line">קו</MenuItem>
+                        <MenuItem value="dot">נקודה</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                ))}
               </Stack>
             </Box>
           )}
