@@ -47,7 +47,7 @@ const ClockEditor: React.FC = () => {
   const [lineWidth, setLineWidth] = useState(2);
   const [lineLength, setLineLength] = useState(20);
   const [roundedEdges, setRoundedEdges] = useState(false);
-  const [innerPosition, setInnerPosition] = useState(0.8);
+  const [innerPosition, _setInnerPosition] = useState(0.7);
   const [selectedFont, setSelectedFont] = useState('Assistant');
   const [isEditable, setIsEditable] = useState(true);
   const [whiteOutsideCircle, setWhiteOutsideCircle] = useState(false);
